@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Runtime logs (kept dir via .gitkeep, see .github/copilot-instructions.md)
+log/*
+!log/.gitkeep
+
+# Uploaded receipts (kept dir via .gitkeep, see .github/copilot-instructions.md)
+uploads/*
+!uploads/.gitkeep

@@ -338,7 +338,7 @@ Einfacher Admin-Zugang für den Betreiber (Mieter haben keinen Zugang).
 - API-/Business-Logik-Spezifikation (Berechnungs-Engine im Detail, Rundungsregeln)
 - UI/Screens (Erfassung Objekte, Wohneinheiten, Mieter, Kosten, Abrechnungslauf)
 - Druckvorlage/PDF-Layout der Abrechnung
-- Authentifizierung/Rechteverwaltung für `benutzer` im Detail
+- Feingranulare Rechteverwaltung für `benutzer` im Detail (derzeit nur eine Rolle vorgesehen; Auth-Technologie siehe Abschnitt 8.1)
 - Konkretes Schnittstellenformat/-protokoll mit der externen Messapplikation
 
 ## 7. Getroffene Annahmen (zur Bestätigung)
@@ -346,3 +346,51 @@ Einfacher Admin-Zugang für den Betreiber (Mieter haben keinen Zugang).
 - Währung ausschließlich EUR (keine Mehrwährungsfähigkeit).
 - Jede Kostenposition betrifft genau ein Objekt (keine geteilten Kosten über mehrere Objekte/Wirtschaftseinheiten hinweg).
 - Keine Überschneidung zweier Mietverhältnisse derselben Wohneinheit (wird anwendungsseitig verhindert).
+
+## 8. Technischer Stack & Implementierungsrichtlinien
+
+Diese Spezifikation bleibt dauerhaft auf Deutsch, inklusive aller zukünftigen Ergänzungen. Entwicklungs-/Tooling-Konventionen
+für Code und Repository (Sprache des Codes, Projektstruktur, Build-/Testbefehle) sind in `.github/copilot-instructions.md`
+dokumentiert und werden hier nicht dupliziert; dieser Abschnitt hält die fachlich relevanten technischen Rahmenentscheidungen
+fest, die direkt Auswirkungen auf das Datenmodell bzw. den Betrieb der Anwendung haben.
+
+### 8.1 Technologie-Stack
+
+| Bereich | Entscheidung |
+|---|---|
+| Backend-Sprache/-Framework | Python 3.12, Flask |
+| Datenbank | MariaDB |
+| Datenbankzugriff | SQLAlchemy (Flask-SQLAlchemy) als ORM; Tabellen-/Spaltennamen bleiben wie in Abschnitt 3 definiert (deutsch) |
+| Schemamigrationen | Alembic (Flask-Migrate) |
+| Authentifizierung (`benutzer`) | Flask-Login; Passwort-Hashing über Werkzeug (`generate_password_hash`/`check_password_hash`) |
+| Dependency-Management | pip + venv, `requirements.txt` |
+| Tests | pytest |
+| Code-Stil/Linting | ruff |
+| Anwendungssprache (UI) | Deutsch, unter Verwendung der etablierten mietrechtlichen Fachbegriffe |
+| Quellcode (Bezeichner) | Englisch; Datenbankschema bleibt deutsch (siehe `.github/copilot-instructions.md`) |
+
+### 8.2 Konfiguration
+
+- Alle Konfigurationswerte (DB-Zugangsdaten, Flask-Secret-Key, Logging-Einstellungen, Upload-Verzeichnis usw.) liegen zentral
+  in einer einzigen Datei `config.json` im Projekt-Root, im JSON-Format.
+- `config.json` wird bewusst mit ins Git-Repository eingecheckt (keine Trennung in `.gitignore` + Beispieldatei).
+
+### 8.3 Logging
+
+- Alle Module schreiben in dieselbe Logdatei (gemeinsamer Logger-Baum, an den Root-Logger propagierend).
+- Bei jedem Anwendungsstart wird eine neue Logdatei mit Start-Zeitstempel im Dateinamen angelegt
+  (z. B. `log/app_20260101_153000.log`) – das entspricht einem neuen „Block“ pro Programmstart.
+- Die Logdateien liegen im Unterverzeichnis `log/` des Projekts.
+- Es werden maximal die 5 letzten Logdateien aufgehoben; ältere werden beim Start automatisch gelöscht.
+
+### 8.4 Reverse Proxy / Transportverschlüsselung
+
+- Die Anwendung läuft hinter einem Reverse Proxy, der TLS/HTTPS terminiert; die Flask-Anwendung selbst liefert nur HTTP aus.
+- Der Reverse Proxy liefert bereits korrekte Weiterleitungs-Header; die Anwendung benötigt dafür keine zusätzliche Middleware.
+- Session-Cookies werden unabhängig davon zusätzlich mit `Secure`, `HttpOnly` und `SameSite=Lax` abgesichert.
+
+### 8.5 Datei-Uploads (Belege)
+
+- Belege (`kosten_beleg.speicherreferenz`) werden im lokalen Dateisystem gespeichert; das Basisverzeichnis ist in
+  `config.json` konfigurierbar (Default: `./uploads`).
+- Kein hartes Limit für Dateigröße oder MIME-Type in der ersten Ausbaustufe.
