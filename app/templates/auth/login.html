@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block header %}{% endblock %}
+{% block content %}
+<section class="card auth">
+  <h1 class="page-header__title">Anmelden</h1>
+  {% if error %}<div class="flash flash--error" role="alert">{{ error }}</div>{% endif %}
+  <form class="form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+    <div class="form__field">
+      <label class="form__label" for="login">Benutzername oder E-Mail</label>
+      <input class="form__input" type="text" id="login" name="login" autocomplete="username" autofocus>
+    </div>
+    <div class="form__field">
+      <label class="form__label" for="password">Passwort</label>
+      <input class="form__input" type="password" id="password" name="password" autocomplete="current-password">
+    </div>
+    <div class="form__actions">
+      <button class="btn btn--primary" type="submit">Anmelden</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

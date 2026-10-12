@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+{% if not figures %}
+<div class="card">
+  <p class="empty">Noch kein Objekt angelegt.</p>
+  <a class="btn btn--primary" href="{{ url_for('stammdaten.eigentuemer_new') }}">+ Eigentümer anlegen</a>
+</div>
+{% endif %}
+<div class="cards">
+  {% for f in figures %}
+  <section class="card">
+    <h2 class="card__title"><a href="{{ url_for('stammdaten.objekte_index', open='objekte-' ~ f.property.id) }}">{{ f.property.name }}</a></h2>
+    <dl class="detail">
+      <dt>Wohneinheiten</dt><dd><a href="{{ url_for('stammdaten.objekte_index', open='objekte-' ~ f.property.id) }}">{{ f.units }}</a></dd>
+      <dt>Aktive Mietverhältnisse</dt><dd>{{ f.tenancies }}</dd>
+      <dt>Aktueller Leerstand</dt><dd>{{ f.vacant }}</dd>
+      <dt>Abrechnung {{ f.last_year }}</dt>
+      <dd>{% if f.last_statement %}<span class="badge badge--{{ {'ENTWURF': 'warning', 'FINALISIERT': 'info', 'VERSENDET': 'success'}[f.last_statement.status] }}">{{ f.last_statement.status | fmt_enum }}</span>{% else %}<span class="badge badge--neutral">nicht angelegt</span>{% endif %}</dd>
+    </dl>
+  </section>
+  {% endfor %}
+</div>
+{% if drafts %}
+<section class="card">
+  <h2 class="card__title">Hinweise</h2>
+  <ul class="hints">
+    {% for s in drafts %}<li><a href="{{ url_for('abrechnung.abrechnungen_detail', id=s.id) }}">Abrechnung {{ s.billing_year }} ({{ s.property.name }})</a> ist noch im Entwurf.</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

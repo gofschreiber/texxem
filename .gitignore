@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
 
 # Runtime logs (kept dir via .gitkeep, see .github/copilot-instructions.md)
 log/*

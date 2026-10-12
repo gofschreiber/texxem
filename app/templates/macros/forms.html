@@ -1,0 +1,63 @@
+{% macro field(f, raw, errors, creating) %}
+{% set value = raw.get(f.name, '') %}
+{% set error = errors.get(f.name) %}
+{% if f.kind == 'hidden' %}
+<input type="hidden" name="{{ f.name }}" value="{{ value }}">
+{% else %}
+<div class="form__field{% if error %} form__field--error{% endif %}">
+  {% if f.kind == 'bool' %}
+  <label class="form__check"><input type="checkbox" name="{{ f.name }}" id="f-{{ f.name }}" value="1"{% if value %} checked{% endif %}> {{ f.label }}</label>
+  {% else %}
+  <label class="form__label" for="f-{{ f.name }}">{{ f.label }}{% if f.required %} <span class="form__required" aria-hidden="true">*</span>{% endif %}</label>
+  {% if not creating and not f.editable %}
+  <div class="form__static" id="f-{{ f.name }}">{{ f.static_text(value) }}</div>
+  {% elif f.kind == 'select' %}
+  <select class="form__input" name="{{ f.name }}" id="f-{{ f.name }}"{% if error %} aria-invalid="true" aria-describedby="err-{{ f.name }}"{% endif %}>
+    <option value="">– bitte wählen –</option>
+    {% for key, label in f.choices() %}<option value="{{ key }}"{% if value | string == key | string %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  {% elif f.kind == 'textarea' %}
+  <textarea class="form__input" name="{{ f.name }}" id="f-{{ f.name }}" rows="4"{% if error %} aria-invalid="true" aria-describedby="err-{{ f.name }}"{% endif %}>{{ value }}</textarea>
+  {% else %}
+  {% set input_type = {'int': 'number', 'date': 'date', 'email': 'email', 'password': 'password', 'file': 'file'}.get(f.kind, 'text') %}
+  <input class="form__input" type="{{ input_type }}" name="{{ f.name }}" id="f-{{ f.name }}"
+    {%- if f.kind not in ('password', 'file') %} value="{{ value }}"{% endif %}
+    {%- if f.kind == 'decimal' %} inputmode="decimal"{% endif %}
+    {%- if f.kind == 'int' %} step="1"{% endif %}
+    {%- if error %} aria-invalid="true" aria-describedby="err-{{ f.name }}"{% endif %}>
+  {% endif %}
+  {% endif %}
+  {% if f.help %}<p class="form__hint">{{ f.help }}</p>{% endif %}
+  {% if error %}<p class="form__error" id="err-{{ f.name }}" role="alert">{{ error }}</p>{% endif %}
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro filter_bar(res, args) %}
+{% if res.searchable or res.filters %}
+<form class="toolbar" method="get">
+  {% if res.searchable %}
+  <div class="toolbar__item">
+    <label class="form__label" for="q">Suche</label>
+    <input class="form__input" type="search" id="q" name="q" value="{{ args.get('q', '') }}">
+  </div>
+  {% endif %}
+  {% for name, label, kind, choices in res.filters %}
+  <div class="toolbar__item">
+    <label class="form__label" for="flt-{{ name }}">{{ label }}</label>
+    {% if kind == 'select' %}
+    <select class="form__input" id="flt-{{ name }}" name="{{ name }}">
+      <option value="">Alle</option>
+      {% for key, text in choices() %}<option value="{{ key }}"{% if args.get(name) | string == key | string %} selected{% endif %}>{{ text }}</option>{% endfor %}
+    </select>
+    {% else %}
+    <input class="form__input" type="date" id="flt-{{ name }}" name="{{ name }}" value="{{ args.get(name, '') }}">
+    {% endif %}
+  </div>
+  {% endfor %}
+  <div class="toolbar__item">
+    <button class="btn btn--secondary" type="submit">Filtern</button>
+  </div>
+</form>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,30 @@
+{% from "macros/icons.html" import icon %}
+{% from "macros/actions.html" import actions %}
+
+{% macro tree_row(node) %}
+<span class="tree__icon">{{ icon(node.kind) }}</span>
+<span class="tree__title">{% if node.url %}<a href="{{ node.url }}">{{ node.title }}</a>{% else %}{{ node.title }}{% endif %}</span>
+<span class="tree__meta">
+  {%- for label, value in node.meta %}<span class="tree__meta-item"><span class="tree__meta-label">{{ label }}:</span> {{ value }}</span>{% endfor -%}
+</span>
+<span class="tree__badges">
+  {%- for text, modifier in node.badges %}<span class="badge badge--{{ modifier }}">{{ text }}</span>{% endfor -%}
+</span>
+<span class="tree__actions">{{ actions(node.actions) }}</span>
+{% endmacro %}
+
+{% macro tree_node(node) %}
+{% if node.is_leaf %}
+<div class="tree__node tree__node--leaf" id="{{ node.key }}">
+  <div class="tree__summary"><span class="tree__toggle tree__toggle--none"></span>{{ tree_row(node) }}</div>
+</div>
+{% else %}
+<details class="tree__node" id="{{ node.key }}"{% if node.open %} open{% endif %}>
+  <summary class="tree__summary"><span class="tree__toggle">{{ icon('chevron') }}</span>{{ tree_row(node) }}</summary>
+  <div class="tree__children">
+    {%- for child in node.children %}{{ tree_node(child) }}{% endfor %}
+    {%- if not node.children and node.empty %}<p class="tree__empty">{{ node.empty }}</p>{% endif %}
+  </div>
+</details>
+{% endif %}
+{% endmacro %}

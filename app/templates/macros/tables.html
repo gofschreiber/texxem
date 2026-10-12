@@ -1,0 +1,55 @@
+{% from "macros/actions.html" import actions %}
+
+{% macro cell(res, col, obj) -%}
+  {%- set value = col.value(obj) -%}
+  {%- if col.kind == 'date' -%}{{ value | fmt_date }}
+  {%- elif col.kind == 'datetime' -%}{{ value | fmt_datetime }}
+  {%- elif col.kind == 'money' -%}{{ value | fmt_money }}
+  {%- elif col.kind == 'decimal' -%}{{ value | fmt_decimal }}
+  {%- elif col.kind == 'bool' -%}{{ 'Ja' if value else 'Nein' }}
+  {%- elif col.kind == 'enum' -%}{{ value | fmt_enum }}
+  {%- elif col.kind == 'badge' -%}<span class="badge badge--{{ value[1] }}">{{ value[0] }}</span>
+  {%- else -%}{{ value if value is not none else '' }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro table(res, items, next_url) %}
+{% if items %}
+<table class="table">
+  <thead>
+    <tr>
+      {%- for col in res.columns %}
+      <th scope="col"{% if col.kind in ('num', 'money') %} class="table__num"{% endif %}>{{ col.label }}</th>
+      {%- endfor %}
+      <th scope="col" class="table__actions"><span class="sr-only">Aktionen</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    {%- for obj in items %}
+    <tr id="{{ res.node_key(obj) }}">
+      {%- for col in res.columns %}
+      <td{% if col.kind in ('num', 'money') %} class="table__num"{% endif %}>
+        {%- set url = res.view_url(obj) if col.link else none -%}
+        {%- if url %}<a href="{{ url }}">{{ cell(res, col, obj) }}</a>{% else %}{{ cell(res, col, obj) }}{% endif -%}
+      </td>
+      {%- endfor %}
+      <td class="table__actions">{{ actions(res.actions(obj, next_url)) }}</td>
+    </tr>
+    {%- endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Noch keine {{ res.plural }} vorhanden.</p>
+{% endif %}
+{% endmacro %}
+
+{% macro pagination(page, pages, args) %}
+{% if pages > 1 %}
+<nav class="pagination" aria-label="Seiten">
+  {% set base = args.to_dict() %}
+  {% if page > 1 %}<a class="btn btn--secondary btn--small" href="?{{ dict(base, page=page - 1) | urlencode }}">Zurück</a>{% endif %}
+  <span class="pagination__info">Seite {{ page }} von {{ pages }}</span>
+  {% if page < pages %}<a class="btn btn--secondary btn--small" href="?{{ dict(base, page=page + 1) | urlencode }}">Weiter</a>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}

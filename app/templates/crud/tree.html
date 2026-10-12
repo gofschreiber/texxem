@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "macros/tree.html" import tree_node %}
+{% from "macros/actions.html" import actions %}
+{% set crumbs = [(title, None)] %}
+{% block actions %}
+{% if primary %}<a class="btn btn--primary" href="{{ primary.url }}">{{ primary.label }}</a>{% endif %}
+{% endblock %}
+{% block content %}
+{% if roots %}
+<div class="toolbar">
+  <a class="btn btn--secondary btn--small" href="?expand=all">Alle aufklappen</a>
+  <a class="btn btn--secondary btn--small" href="?expand=none">Alle zuklappen</a>
+</div>
+<div class="tree">
+  {% for root in roots %}{{ tree_node(root) }}{% endfor %}
+</div>
+{% else %}
+<div class="card">
+  <p class="empty">{{ empty_text }}</p>
+  {% if empty_action %}<a class="btn btn--primary" href="{{ empty_action.url }}">{{ empty_action.label }}</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

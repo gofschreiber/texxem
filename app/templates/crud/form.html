@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "macros/forms.html" import field %}
+{% set crumbs = [(res.plural, res.index_url()), (title, None)] %}
+{% block content %}
+<form class="form card" method="post" novalidate{% if multipart %} enctype="multipart/form-data"{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ next_url }}">
+  {% if errors %}
+  <div class="flash flash--error" role="alert">
+    {{ errors.get('_form') or 'Bitte korrigieren Sie die markierten Felder.' }}
+  </div>
+  {% endif %}
+  {% for section, fields in sections.items() %}
+  {% if fields | rejectattr('kind', 'equalto', 'hidden') | list %}
+  <fieldset class="form__section">
+    <legend class="form__legend">{{ section }}</legend>
+    {% for f in fields %}{{ field(f, raw, errors, creating) }}{% endfor %}
+  </fieldset>
+  {% else %}
+  {% for f in fields %}{{ field(f, raw, errors, creating) }}{% endfor %}
+  {% endif %}
+  {% endfor %}
+  <div class="form__actions">
+    <button class="btn btn--primary" type="submit">Speichern</button>
+    <a class="btn btn--secondary" href="{{ next_url }}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

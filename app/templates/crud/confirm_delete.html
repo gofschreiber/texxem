@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% set crumbs = [(res.plural, res.index_url()), (res.title(obj), None), ('Löschen', None)] %}
+{% block content %}
+<form class="form card" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ next_url }}">
+  <p>Soll {{ res.singular }} „{{ res.title(obj) }}“ endgültig gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.</p>
+  <div class="form__actions">
+    <button class="btn btn--danger" type="submit">Endgültig löschen</button>
+    <a class="btn btn--secondary" href="{{ next_url }}">Abbrechen</a>
+  </div>
+</form>
+{% endblock %}

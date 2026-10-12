@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if title %}{{ title }} – {% endif %}Texxem</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+{% if test_mode %}<div class="test-banner" role="status">TESTMODUS – Testdatenbank</div>{% endif %}
+<div class="app{% if not current_user.is_authenticated %} app--bare{% endif %}">
+  {% if current_user.is_authenticated %}
+  <header class="app__header">
+    <a class="app__brand" href="{{ url_for('main.dashboard') }}">Texxem</a>
+    {% if properties | length > 1 %}
+    <form class="app__property" method="post" action="{{ url_for('main.choose_property') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+      <label for="active-property">Aktives Objekt</label>
+      <select class="form__input" id="active-property" name="property_id">
+        <option value="">Alle Objekte</option>
+        {% for p in properties %}<option value="{{ p.id }}"{% if p.id == active_property_id %} selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+      <button class="btn btn--secondary btn--small" type="submit">Wechseln</button>
+    </form>
+    {% endif %}
+    <div class="app__user">
+      <span class="app__username">{{ current_user.username }}</span>
+      <a class="btn btn--secondary btn--small" href="{{ url_for('auth.change_password') }}">Passwort ändern</a>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn--secondary btn--small" type="submit">Abmelden</button>
+      </form>
+    </div>
+  </header>
+  <nav class="app__nav" aria-label="Hauptnavigation">
+    {% for group, items in nav %}
+    <div class="nav__group">
+      {% if group %}<p class="nav__heading">{{ group }}</p>{% endif %}
+      <ul class="nav__list">
+        {% for label, url, prefixes in items %}
+        {% set current = (request.path == '/') if url == '/' else request.path.startswith(prefixes) %}
+        <li><a class="nav__link{% if current %} nav__link--active{% endif %}" href="{{ url }}"{% if current %} aria-current="page"{% endif %}>{{ label }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </nav>
+  {% endif %}
+  <main class="app__main">
+    {% if crumbs %}
+    <nav class="breadcrumb" aria-label="Brotkrumen">
+      <ol>
+        {% for label, url in crumbs %}<li>{% if url %}<a href="{{ url }}">{{ label }}</a>{% else %}{{ label }}{% endif %}</li>{% endfor %}
+      </ol>
+    </nav>
+    {% endif %}
+    {% block header %}
+    <div class="page-header">
+      <h1 class="page-header__title">{{ title }}</h1>
+      <div class="page-header__actions">{% block actions %}{% endblock %}</div>
+    </div>
+    {% endblock %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+      <div class="flash flash--{{ 'error' if category == 'error' else category }}" role="{{ 'alert' if category == 'error' else 'status' }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

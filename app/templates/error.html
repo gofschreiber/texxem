@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <p>{{ text }}</p>
+  <p><a class="btn btn--secondary" href="{{ url_for('main.dashboard') }}">Zur Übersicht</a></p>
+</div>
+{% endblock %}

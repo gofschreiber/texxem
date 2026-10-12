@@ -1,0 +1,26 @@
+[Unit]
+Description=Texxem Betriebskostenabrechnung (gunicorn)
+Wants=mariadb.service
+After=network.target mariadb.service
+# Stop restarting after 5 failed starts within 5 minutes instead of looping forever.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=gerald
+Group=gerald
+WorkingDirectory=/home/gerald/texxem
+# --preload: create_app() (and thus the per-start log file) runs once in the master, not per worker.
+ExecStart=/home/gerald/texxem/.venv/bin/gunicorn --preload --workers 2 --bind 0.0.0.0:8000 --graceful-timeout 30 --access-logfile - --error-logfile - wsgi:app
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=40
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/gerald/texxem/log /home/gerald/texxem/uploads
+
+[Install]
+WantedBy=multi-user.target

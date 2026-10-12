@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% from "macros/tables.html" import table, pagination with context %}
+{% from "macros/forms.html" import filter_bar %}
+{% set crumbs = [(res.plural, None)] %}
+{% block actions %}
+{% if new_url %}<a class="btn btn--primary" href="{{ new_url }}">+ {{ res.new_label }}</a>{% endif %}
+{% endblock %}
+{% block content %}
+{{ filter_bar(res, args) }}
+{{ table(res, items, next_url) }}
+{{ pagination(page, pages, args) }}
+{% endblock %}

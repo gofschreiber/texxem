@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "macros/actions.html" import actions %}
+{% from "macros/tables.html" import table %}
+{% set crumbs = [(res.plural, list_url), (res.title(obj), None)] %}
+{% block actions %}{{ actions(head_actions) }}{% endblock %}
+{% block content %}
+<section class="card">
+  <dl class="detail">
+    {% for f in res.fields if f.kind not in ('hidden', 'file', 'password') %}
+    <dt>{{ f.label }}</dt>
+    <dd>{{ f.display(obj | attr(f.attr)) }}</dd>
+    {% endfor %}
+  </dl>
+</section>
+{% for child in children %}
+<section class="card">
+  <div class="card__header">
+    <h2 class="card__title">{{ child.title }}</h2>
+    {% if child.add %}{{ actions([child.add]) }}{% endif %}
+  </div>
+  {% if child.note %}<p class="form__hint">{{ child.note }}</p>{% endif %}
+  {{ table(child.res, child.items, next_url) }}
+</section>
+{% endfor %}
+{% endblock %}

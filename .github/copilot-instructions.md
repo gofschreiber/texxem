@@ -37,7 +37,7 @@ domain specification for utility cost billing ("Betriebskostenabrechnung") for a
 
 - **Language/Runtime**: Python 3.12
 - **Web framework**: Flask, using the application factory pattern (`create_app()`)
-- **Database**: MariaDB
+- **Database**: MariaDB (`utf8mb4` / `utf8mb4_unicode_ci`), driver PyMySQL (`mysql+pymysql://`)
 - **ORM**: SQLAlchemy via Flask-SQLAlchemy
 - **Migrations**: Alembic via Flask-Migrate
 - **Auth**: Flask-Login; password hashing via `werkzeug.security`
@@ -130,6 +130,22 @@ model module per table.
   during a run.
 - Log level and retention count are configurable via `config.json` (see "Configuration").
 
+## Web UI Conventions
+
+The UI is specified in [specification.md](../specification.md), sections 10–19 (Phase 2). Cross-cutting rules:
+
+- **One central stylesheet**, `app/static/css/app.css`. No `style` attributes, no `<style>` blocks, no per-page CSS, no
+  CSS frameworks/CDNs. Colours/spacing/fonts are CSS custom properties (design tokens); templates only set classes
+  from the component catalog (spec 17.3).
+- **Uniform CRUD pattern** for every entity (spec 12): same URL scheme (`/<ressource>/neu`, `/<id>/bearbeiten`,
+  `/<id>/loeschen`), same row/node actions (Anzeigen · Bearbeiten · Löschen), same form buttons (Speichern ·
+  Abbrechen), two-step delete with dependency check. Implement via shared CRUD helpers and Jinja macros
+  (`macros/forms.html`, `tables.html`, `tree.html`, `actions.html`, `icons.html`) — do not hand-write per-entity variants.
+- **Multi-level data is shown as a collapsible tree** (`<details>`/`<summary>`, works without JS); single-level data
+  as a table.
+- Pages must work without JavaScript; JS is progressive enhancement only (vanilla, no libraries, no CDNs).
+- Every write is `POST` with a CSRF token (Flask-WTF `CSRFProtect`); UI text is German.
+
 ## Reverse Proxy / Security
 
 - The app runs behind a reverse proxy that terminates TLS/HTTPS and forwards plain HTTP to Flask.
@@ -152,5 +168,35 @@ Once the project is scaffolded:
 - Setup: `python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt`
 - Run dev server: `flask --app wsgi run`
 - Apply migrations: `flask db upgrade`
-- Run tests: `pytest`
+- Create the first operator account: `flask --app wsgi create-user <username> <email>`
+- Run tests: `pytest`. Tests run the app in **test mode** (`create_app(test_mode=True)`): database
+  `<database.name>_test` (`texxem_test`, must exist and be accessible to the configured DB user), `uploads/_test/`,
+  log files `app_<timestamp>_test.log`. The test session rebuilds the test database via the Alembic migrations
+  (`downgrade base` → `upgrade`) and resets the data before every test. Test mode refuses to start on a database whose
+  name does not end in `_test`. Manual try-out: `flask --app wsgi_test db upgrade && flask --app wsgi_test run`.
 - Lint/format: `ruff check .` / `ruff format .`
+
+## Service (systemd)
+
+- Production runs as `texxem.service` (gunicorn, `0.0.0.0:8000`, reachable from the LAN, `Restart=on-failure`). The unit template lives in
+  `deploy/texxem.service`; install/update with
+  `sudo cp deploy/texxem.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl restart texxem`.
+- After code changes or `flask db upgrade`: `sudo systemctl restart texxem`. Logs: `journalctl -u texxem -f`.
+- Keep `--preload` in the unit: `create_app()` creates the per-start log file and must run once, not per worker.
+
+## Database Migrations
+
+- Schema changes are made only through Alembic migrations in `migrations/versions/` (`flask db migrate` +
+  review, then `flask db upgrade`). Catalog seed data (`kostenart`, `verteilerschluessel`, `zaehlertyp`) lives
+  in the initial migration.
+- The constraint naming convention is defined centrally in `app/extensions.py`; do not name constraints ad hoc.
+
+## Testing Conventions
+
+- **Drive tests through the web interface** (`tests/ui.py`: loads the form for its CSRF token, posts with Referer,
+  follows redirects) and **verify the result in the database** with an independent query (`query` fixture, fresh
+  connection). Direct DB writes are only for preparation that the UI cannot do (e.g. `SCHNITTSTELLE` readings).
+- Create test data through the UI with the helpers in `tests/helpers.py` (form field names are the German column names).
+- Do not keep an app context open around client requests (it would share the DB session with the app).
+- `tests/test_ui_consistency.py` guards the UI conventions above (uniform actions/forms, tree vs. table, single
+  stylesheet, no inline styles, every used CSS class defined). New pages/entities must keep these tests green.

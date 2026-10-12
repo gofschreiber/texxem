@@ -1,0 +1,13 @@
+{% from "macros/icons.html" import icon %}
+{#- Row/node actions in the fixed order: add/status · view · edit · delete (built in Python) -#}
+{% macro actions(acts) %}
+<div class="actions">
+  {%- for a in acts %}
+    {%- if a.kind in ('add', 'status') %}
+  <a class="btn btn--secondary btn--small" href="{{ a.url }}">{{ a.label }}</a>
+    {%- else %}
+  <a class="btn btn--icon{% if a.kind == 'delete' %} btn--danger{% endif %}" href="{{ a.url }}" title="{{ a.label }}" aria-label="{{ a.label }}">{{ icon(a.kind) }}</a>
+    {%- endif %}
+  {%- endfor %}
+</div>
+{%- endmacro %}

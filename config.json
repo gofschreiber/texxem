@@ -1,0 +1,18 @@
+{
+  "secret_key": "d862104c40e7fafce6375bcb76825b470f92b6de9f868335fd89218657ad7acf",
+  "database": {
+    "host": "localhost",
+    "port": 3306,
+    "name": "texxem",
+    "user": "texxem",
+    "password": "4I91XNRtBoNoPczqYJyl6S6mCliv"
+  },
+  "logging": {
+    "directory": "log",
+    "level": "DEBUG",
+    "retention_count": 5
+  },
+  "uploads": {
+    "directory": "uploads"
+  }
+}
